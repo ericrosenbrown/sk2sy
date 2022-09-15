@@ -67,24 +67,13 @@ def partition_options(transitions: list, eps:float = 1e-2, min_samples:float = 5
 
 if __name__ == "__main__":
 	from sk2sy.domains.exit_room import ExitRoom
-	import random
+	from sk2sy.utils.generate_transitions import generate_transitions
 
 	domain = ExitRoom()
+	num_transitions = 100
 
 	#Generate transitions from domain
-	transitions = []
-
-	num_transitions = 100
-	while len(transitions) < num_transitions:
-		state = domain.get_state()
-		action = random.choice(domain.actions)
-		try:
-			next_state, reward, done = domain.step(action)
-			transitions.append([state, action, reward, next_state])
-			if done:
-				domain.reset()
-		except:
-			pass
+	transitions = generate_transitions(domain, num_transitions = num_transitions)
 
 	#Get partioned transitions
 	partioned_transitions = partition_options(transitions)

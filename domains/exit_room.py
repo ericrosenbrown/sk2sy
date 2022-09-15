@@ -3,6 +3,10 @@ import random
 import copy
 import numpy as np
 
+#TODO standardize domains under single domain class, type requirements on states, actions, etc.?
+#TODO connect with gym setup
+#TODO unit tests
+
 class ExitRoom:
 	def __init__(self):
 		'''
