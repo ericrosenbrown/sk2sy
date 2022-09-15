@@ -1,3 +1,5 @@
+#TODO rework this function to take an option instead and return the mask, probably by generating transitions inside this function? or maybe separate function for that
+
 def get_mask(start_state,end_state):
 	'''
 	Calculate the mask (state indicies that change from start_state to end_state)
