@@ -1,6 +1,6 @@
 #TODO rework this function to take an option instead and return the mask, probably by generating transitions inside this function? or maybe separate function for that
 
-def get_mask(start_state,end_state):
+def get_mask(start_state,end_state) -> tuple[int]:
 	'''
 	Calculate the mask (state indicies that change from start_state to end_state)
 
@@ -18,6 +18,6 @@ def get_mask(start_state,end_state):
 	for index, (first, second) in enumerate(zip(start_state, end_state)):
 		if first != second:
 			mask.append(index)
-	return(mask)
+	return(tuple(mask))
 
 #TODO write unit tests 

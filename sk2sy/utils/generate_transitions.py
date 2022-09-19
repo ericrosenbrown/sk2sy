@@ -1,6 +1,11 @@
+from typing import List
 import random
 
-def generate_transitions(domain, num_transitions = 100):	
+from sk2sy.transitions import Transition
+from sk2sy.domains.domain import Domain
+
+
+def generate_transitions(domain: Domain, num_transitions = 100) -> List[Transition]:	
 	'''
 	Generate num_transitions transitions by stepping through the domain. Takes random actions,
 	and once done is returned from domain, resets the domain.
@@ -12,7 +17,7 @@ def generate_transitions(domain, num_transitions = 100):
 		action = random.choice(domain.actions)
 		try:
 			next_state, reward, done = domain.step(action)
-			transitions.append([state, action, reward, next_state])
+			transitions.append(Transition(state, action, reward, next_state))
 			if done:
 				domain.reset()
 		except:

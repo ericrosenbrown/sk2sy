@@ -3,11 +3,13 @@ import random
 import copy
 import numpy as np
 
+from sk2sy.domains.domain import Domain
+
 #TODO standardize domains under single domain class, type requirements on states, actions, etc.?
 #TODO connect with gym setup
 #TODO unit tests
 
-class ExitRoom:
+class ExitRoom(Domain):
 	def __init__(self):
 		'''
 		The ExitRoom domain. There is a door the robot must be opened. In order to unlock the door,
@@ -32,7 +34,7 @@ class ExitRoom:
 		### Dynamics ###
 		self.radius = 0.1 #the radius around an object the robot will move / needs to be within to interact with object
 
-	def get_state(self) -> list:
+	def get_state(self) -> tuple:
 		'''
 		Returns the curent state of the environment
 		'''
@@ -49,10 +51,11 @@ class ExitRoom:
 			float(self.switch0_status),
 			float(self.switch1_status)
 		] 
-		return(state)
+		# Make it a tuple so we it is hashable
+		return(tuple(state))
 
 
-	def reset(self) -> list:
+	def reset(self) -> tuple:
 		'''
 		Reset the state of the environment
 
@@ -118,7 +121,7 @@ class ExitRoom:
 		nearby = (distance <= self.radius)
 		return(nearby)
 
-	def step(self, action: str) -> list:
+	def step(self, action: str) -> list[str, float, bool]:
 		'''
 		Given an action, performs action in the environment and returns the current state and reward. If action is infeasible
 		in current state, returns an error.

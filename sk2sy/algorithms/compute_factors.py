@@ -1,5 +1,7 @@
 from sk2sy.utils.get_mask import get_mask
 from sk2sy.utils.generate_transitions import generate_transitions
+from sk2sy.utils.partition_by_function import partition_by_function
+from sk2sy.utils.invert_dict import invert_dict
 
 from collections import defaultdict
 import functools
@@ -118,6 +120,49 @@ def compute_factors_domain(domain, num_transitions:float = 100):
 		factors_options[factor_id].append(option)
 
 	return(factors_state_idxs,factors_options)
+
+
+def compute_factors_domain_2(domain, num_transitions:float = 100) -> tuple[dict, dict]:
+	'''
+	Compute the factors (parition over state variables based on similar option masks) for a domain. This implicitly assumes
+	the domain already has subgoal options, so this function will sample num_transitions transitions from it to generate
+	masks and then factors
+
+	Parameters:
+	@domain: a domain to compute the factors for
+	@num_transitions (optional): number of transitions to sample from domain to calculate masks for factors.
+
+	Returns:
+	@factors_state_idxs: a dictionary, where key is factor_id, and value is state_idxs where state_idxs
+	is a list of state_idxs associated with factor_id 
+	@factors_options: a dictionary, where key is factor_id, and value is list of options that have mask over
+	state_variables included in factors_state_idxs[factor_id]
+	'''
+
+	transitions = generate_transitions(domain, num_transitions=num_transitions)
+
+	# Mapping from state_var to list of options affecting it
+	# TODO populate
+	statevar2options: dict[int, set[str]] = dict()
+	for t in transitions:
+		state_len = len(t.start_state)
+		affected_vars = [i for i in range(state_len) if t.start_state[i] != t.end_state[i]]
+		for v in affected_vars:
+			if v not in statevar2options.keys():
+				statevar2options[v] = set()
+			statevar2options[v].add(t.action)
+
+	# Partition state vars by the set of options affecting them
+	# MFNOTE: This currently omits state vars that are never affected
+	# To get around that, we'd need to know the names of all state vars,
+	# ie how many there are.
+	# We could do that in the above loop, but that's gross, so
+	# I'll just leave this until the domain has that property
+	options2statevars = partition_by_function(statevar2options.keys(), lambda s: frozenset(statevar2options[s]))
+	factor2statevars = {i:vs for i, vs in enumerate(options2statevars.values())}
+	factor2options = {i:x for i, x in enumerate(options2statevars.keys())}
+
+	return factor2statevars, factor2options
 
 
 
