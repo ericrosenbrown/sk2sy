@@ -119,6 +119,8 @@ def compute_factors_domain(domain, num_transitions:float = 100):
 
 	return(factors_state_idxs,factors_options)
 
+
+
 if __name__ == "__main__":
 	#how many transitions we sample from domain (For estimating masks, subgoal partitioning
 	num_transitions = 100
