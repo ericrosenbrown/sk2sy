@@ -1,10 +1,12 @@
+from collections import defaultdict
+import functools
+
 from sk2sy.utils.get_mask import get_mask
 from sk2sy.utils.generate_transitions import generate_transitions
 from sk2sy.utils.partition_by_function import partition_by_function
 from sk2sy.utils.invert_dict import invert_dict
+from sk2sy.domains.domain import Domain
 
-from collections import defaultdict
-import functools
 
 #TODO: rewrite compute factors in the same way in original paper, or at least make sure it is in same order of complexity
 #TODO: add debugging statements for prints
@@ -122,7 +124,7 @@ def compute_factors_domain(domain, num_transitions:float = 100):
 	return(factors_state_idxs,factors_options)
 
 
-def compute_factors_domain_2(domain, num_transitions:float = 100) -> tuple[dict, dict]:
+def compute_factors_domain_2(domain: Domain, num_transitions:float = 100) -> tuple[dict, dict]:
 	'''
 	Compute the factors (parition over state variables based on similar option masks) for a domain. This implicitly assumes
 	the domain already has subgoal options, so this function will sample num_transitions transitions from it to generate
