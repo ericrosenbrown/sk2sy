@@ -9,6 +9,7 @@ import functools
 #TODO: unit tests
 #TODO: restructure return to just be a single dictionary? what's the best data structure for holding factors?
 #TODO: maybe make a single compute_factors function that simply takes list of transitions (where actions are already assumed to be subgoal)
+#TODO: (Compute factors by partioning state variables based on option_mask_dict) in functions may be bugged and needs to be checked/fixed?
 
 def compute_factors_from_subgoal_option_transitions(subgoal_options):
 	'''
