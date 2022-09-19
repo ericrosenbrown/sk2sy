@@ -6,6 +6,7 @@ from sk2sy.utils.generate_transitions import generate_transitions
 from sk2sy.utils.partition_by_function import partition_by_function
 from sk2sy.utils.invert_dict import invert_dict
 from sk2sy.domains.domain import Domain
+from sk2sy.transitions import Transition
 
 
 #TODO: rewrite compute factors in the same way in original paper, or at least make sure it is in same order of complexity
@@ -38,16 +39,16 @@ def compute_factors_from_subgoal_option_transitions(subgoal_options):
 
 	#for each action, calculate the mask
 	for action in list(subgoal_options.keys()):
-		transitions = subgoal_options[action] #transitions associated with this subgoal option
+		transitions: list[Transition] = subgoal_options[action] #transitions associated with this subgoal option
 		print("Calculating mask for action {action}".format(action=action))
 
 		#Get the masks for all transitions in action_transitions
-		masks = list(map(lambda transition:get_mask(transition[0],transition[3]), transitions))
+		masks = list(map(lambda transition:get_mask(transition.start_state,transition.end_state), transitions))
 		print(masks)
 
 		#use reduce to turn list of masks (list of lists) into just a list of state variables, convert to set and back to list
 		#to get unique state variables
-		option_mask = list(set(functools.reduce(list.__add__, masks, [])))
+		option_mask = list(set(functools.reduce(tuple.__add__, masks, tuple())))
 		#sort option mask
 		option_mask.sort() 
 		
@@ -96,14 +97,14 @@ def compute_factors_domain(domain, num_transitions:float = 100):
 		print("Calculating mask for action {action}".format(action=action))
 
 		#Get all transitions with the current action we're getting mask for
-		action_transitions = list(filter(lambda transition: transition[1] == action, transitions))
+		action_transitions: list[Transition] = list(filter(lambda transition: transition.action == action, transitions))
 		#Get the masks for all transitions in action_transitions
-		masks = list(map(lambda transition:get_mask(transition[0],transition[3]), action_transitions))
+		masks = list(map(lambda transition:get_mask(transition.start_state,transition.end_state), action_transitions))
 		print(masks)
 
 		#use reduce to turn list of masks (list of lists) into just a list of state variables, convert to set and back to list
 		#to get unique state variables
-		option_mask = list(set(functools.reduce(list.__add__, masks, [])))
+		option_mask = list(set(functools.reduce(tuple.__add__, masks, tuple())))
 		#sort option mask
 		option_mask.sort() 
 		

@@ -5,6 +5,6 @@ from dataclasses import dataclass
 class Transition:
     start_state: List
     action: str
-    end_state: List
     reward: float
+    end_state: List
     
