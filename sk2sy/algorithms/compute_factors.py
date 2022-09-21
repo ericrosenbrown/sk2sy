@@ -6,7 +6,7 @@ from sk2sy.utils.generate_transitions import generate_transitions
 from sk2sy.utils.partition_by_function import partition_by_function
 from sk2sy.utils.invert_dict import invert_dict
 from sk2sy.domains.domain import Domain
-from sk2sy.transitions import Transition
+from sk2sy.classes import Transition, StateVar, State, Action, Factor
 
 
 #TODO: rewrite compute factors in the same way in original paper, or at least make sure it is in same order of complexity
@@ -17,7 +17,11 @@ from sk2sy.transitions import Transition
 #TODO: (Compute factors by partioning state variables based on option_mask_dict) in functions may be bugged and needs to be checked/fixed?
 #TODO: update the docstrings correctly for these functions
 
-def compute_factors_from_transitions(transitions):
+def compute_factors_from_transitions(transitions: list[Transition]
+	) -> tuple[
+		dict[int, list[Factor]],
+		dict[int, list[Action]]
+	]:
 	'''
 	Compute the factors (parition over state variables based on similar option masks) for a given set of subgoal options.
 	This function is used when the domain originally does not have subgoal options, and so one of the partition_options
@@ -36,7 +40,7 @@ def compute_factors_from_transitions(transitions):
 
 	# Mapping from state_var to list of options affecting it
 	# TODO populate
-	statevar2options: dict[int, set[str]] = dict()
+	statevar2options: dict[StateVar, set[Action]] = dict()
 	for t in transitions:
 		state_len = len(t.start_state)
 		affected_vars = [i for i in range(state_len) if t.start_state[i] != t.end_state[i]]
@@ -54,14 +58,18 @@ def compute_factors_from_transitions(transitions):
 
 	# MFNOTE: in the pseudocode, we have a list of factors for each option.
 	# Here we have a single 
-	options2statevars: dict[frozenset[str], list[int]] = partition_by_function(statevar2options.keys(), lambda s: frozenset(statevar2options[s]))
+	options2statevars: dict[frozenset[Action], list[StateVar]] = partition_by_function(statevar2options.keys(), lambda s: frozenset(statevar2options[s]))
 	factor2statevars = {i:vs for i, vs in enumerate(options2statevars.values())}
 	factor2options = {i:x for i, x in enumerate(options2statevars.keys())}
 
 	return factor2statevars, factor2options
 
 
-def compute_factors_domain(domain: Domain, num_transitions:float = 100) -> tuple[dict, dict]:
+def compute_factors_domain(domain: Domain, num_transitions:float = 100
+	) -> tuple[
+		dict[int, list[Factor]],
+		dict[int, list[Action]]
+	]:
 	'''
 	Compute the factors (parition over state variables based on similar option masks) for a domain. This implicitly assumes
 	the domain already has subgoal options, so this function will sample num_transitions transitions from it to generate

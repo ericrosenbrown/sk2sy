@@ -1,8 +1,9 @@
 from collections import defaultdict
+from dataclasses import asdict
 from sklearn.cluster import DBSCAN
 import numpy as np
 from sk2sy.utils.get_mask import get_mask
-from sk2sy.transitions import Transition
+from sk2sy.classes import Transition, Action
 
 #TODO turn this into a class, probably. or move some of these functions into a utils.py function if used across other algos
 #TODO standardize the form of transitions (probably make a class for transitions)
@@ -13,7 +14,7 @@ from sk2sy.transitions import Transition
 #TODO finished probablistic_partition_options, have it call deterministic partition options
 
 
-def deterministic_partition_options(transitions: list[Transition], eps:float = 1e-2, min_samples:float = 5) -> dict:
+def deterministic_partition_options(transitions: list[Transition], eps:float = 1e-2, min_samples:float = 5) -> list[Transition]:
 	'''Given a list of transitions, return a new list of transitions with options partitioned
 	into approximately strong subgoal options (Im(o,x) = Eff(o) for all x in I_o). This assumes 
 	non-probablistic effect distriubtion. Uses DBSCAN for clustering from sklearn implementation
@@ -40,12 +41,12 @@ def deterministic_partition_options(transitions: list[Transition], eps:float = 1
 	See page 255 (41 in the pdf)
 	'''
 
-	partitioned_options = defaultdict(lambda :[]) 
+	# partitioned_options = defaultdict(lambda :[]) 
 
 	#Get all the actions in the transitions
 	# MFNOTE: Is this faster than list(set([t.action for t in transitions])) ?
 	actions = list(set(map(lambda transition: transition.action, transitions)))
-
+	transitions_new: list[Transition] = []
 	#For each action
 	for action in actions:
 		#print("Building partitions for {action}".format(action=action))
@@ -77,8 +78,12 @@ def deterministic_partition_options(transitions: list[Transition], eps:float = 1
 			#print(clustering.labels_)
 			for (transition, cluster) in zip(transition_list, clustering.labels_):
 				# MFNOTE: I think named tuples (or dataclasses) are clearer than concatenated strings
-				partitioned_options[action+"^"+str(mask_idx)+"^"+str(cluster)].append(transition)
-	return(partitioned_options)
+				action_new = Action(action+"^"+str(mask_idx)+"^"+str(cluster))
+				d_transition = asdict(transition)
+				d_transition["action"] = action_new
+				transitions_new.append(Transition(**d_transition))
+				# partitioned_options[action_new].append(transition)
+	return(transitions_new)
 
 
 def probablistic_partition_options(transitions: list[Transition], eps:float = 1e-2, min_samples:float = 5) -> list:

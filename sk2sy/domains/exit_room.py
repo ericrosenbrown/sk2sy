@@ -4,6 +4,7 @@ import copy
 import numpy as np
 
 from sk2sy.domains.domain import Domain
+from sk2sy.classes import Action, State, Reward
 
 #TODO standardize domains under single domain class, type requirements on states, actions, etc.?
 #TODO connect with gym setup
@@ -34,7 +35,7 @@ class ExitRoom(Domain):
 		### Dynamics ###
 		self.radius = 0.1 #the radius around an object the robot will move / needs to be within to interact with object
 
-	def get_state(self) -> tuple:
+	def get_state(self) -> State:
 		'''
 		Returns the curent state of the environment
 		'''
@@ -52,10 +53,10 @@ class ExitRoom(Domain):
 			float(self.switch1_status)
 		] 
 		# Make it a tuple so we it is hashable
-		return(tuple(state))
+		return(State(tuple(state)))
 
 
-	def reset(self) -> tuple:
+	def reset(self) -> State:
 		'''
 		Reset the state of the environment
 
@@ -121,7 +122,7 @@ class ExitRoom(Domain):
 		nearby = (distance <= self.radius)
 		return(nearby)
 
-	def step(self, action: str) -> list[str, float, bool]:
+	def step(self, action: Action) -> list[State, Reward, bool]:
 		'''
 		Given an action, performs action in the environment and returns the current state and reward. If action is infeasible
 		in current state, returns an error.
@@ -173,7 +174,7 @@ class ExitRoom(Domain):
 				raise Exception("Attempted to perform {action} but preconditions not met".format(action=action))
 
 		new_state = self.get_state()
-		reward = -1 #all actions have some reward value
+		reward = Reward(-1) #all actions have some reward value
 		done = self.door_status
 		return(new_state, reward, done)
 
@@ -192,6 +193,7 @@ if __name__ == "__main__":
 	"move_to_door",
 	"open_door"
 	]
+	plan = [Action(x) for x in plan]
 
 	for action in plan:
 		state, reward, done = domain.step(action)

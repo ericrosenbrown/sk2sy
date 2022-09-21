@@ -1,7 +1,7 @@
 from typing import List
 import random
 
-from sk2sy.transitions import Transition
+from sk2sy.classes import Transition
 from sk2sy.domains.domain import Domain
 
 
