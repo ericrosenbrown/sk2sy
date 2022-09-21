@@ -51,6 +51,9 @@ def compute_factors_from_transitions(transitions):
 	# ie how many there are.
 	# We could do that in the above loop, but that's gross, so
 	# I'll just leave this until the domain has that property
+
+	# MFNOTE: in the pseudocode, we have a list of factors for each option.
+	# Here we have a single 
 	options2statevars: dict[frozenset[str], list[int]] = partition_by_function(statevar2options.keys(), lambda s: frozenset(statevar2options[s]))
 	factor2statevars = {i:vs for i, vs in enumerate(options2statevars.values())}
 	factor2options = {i:x for i, x in enumerate(options2statevars.keys())}
