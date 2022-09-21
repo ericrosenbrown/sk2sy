@@ -15,5 +15,5 @@ setup(
     author="Eric Rosen",
     author_email="eric_rosen@brown.edu",
     packages=["sk2sy"],
-    requires=requirements
+    requires=[]
 )
