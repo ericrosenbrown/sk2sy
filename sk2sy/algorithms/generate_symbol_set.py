@@ -2,9 +2,10 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 import numpy as np
 import copy
-from typing import NewType
+from functools import reduce
+from typing import NewType, Union
 
-from sk2sy.classes import Transition, State, Factor, Action
+from sk2sy.classes import Transition, State, Factor, Action, StateVar
 
 
 def concat_lists(*lsts):
@@ -13,12 +14,13 @@ def concat_lists(*lsts):
 		r += l
 	return r
 
-def project(s: State, s_vars: Factor) -> State:
+def project(s: State, s_vars: tuple[StateVar,...]) -> State:
 	idx_keep = [i for i in range(len(s)) if i not in s_vars]
-	return s[idx_keep]
+	s_array = np.array(s)
+	return State(tuple(s_array[idx_keep]))
 
 #TODO fill in the docstring for generate_symbol_sets fully
-def generate_symbol_sets(option2transitions: dict[Action, list[Transition]], option2factors: dict[Action, list[Factor]]):
+def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Action, list[Factor]]):
 	'''
 	Generate the symbolic vocabulary
 	Psuedocode on page 237 (23)
@@ -39,7 +41,12 @@ def generate_symbol_sets(option2transitions: dict[Action, list[Transition]], opt
 
 
 	'''
+	option2transitions: dict[str, list[Transition]] = partition_by_function(transitions, lambda t: t.action)
 	symbols = []
+	# all_states: list[State]
+	#state_pairs = [[t.start_state, t.end_state] for t in transitions]
+	# all_states = reduce(lambda t1,t2: [t1.start_state,t1.end_state] + [t2.start_state, t2.end_state], transitions)
+	all_states = sorted(list(set(reduce(list.__add__, [[t.start_state, t.end_state] for t in transitions], list()))))
 	# all_factors = sorted(list(set(concat_lists(option2factors.values()))))
 	for o, ts in option2transitions.items():
 		# TODO? take in list of states for e and all_states
@@ -50,7 +57,7 @@ def generate_symbol_sets(option2transitions: dict[Action, list[Transition]], opt
 
 		e = sorted(list(set([tuple(t.end_state) for t in ts])))
 		# TODO calcualte all_states outside this loop
-		all_states = sorted(list(set(e + [tuple(t.start_state) for t in ts])))
+		# all_states = sorted(list(set(e + [tuple(t.start_state) for t in ts])))
 		n_states = len(all_states)
 		# MFNOTE: Getting these labels could be done much faster, I think
 		state_is_e = [s in e for s in all_states]
@@ -58,11 +65,13 @@ def generate_symbol_sets(option2transitions: dict[Action, list[Transition]], opt
 		other_factors = [x for x in f if x != f]
 
 		for f_i in f:
-			msk_other = sorted(list(set(concat_lists(*other_factors))))
+			# TODO use reduce
+			msk_i = f_i.state_vars
+			msk_other = sorted(list(set(concat_lists(*[f_j.state_vars for f_j in f if f_j != f_i]))))
 
 			# Project e onto f and f_complement
 			# states_f = [s[f] for s in all_states]
-			states_f = [project(s, f_i) for s in all_states]
+			states_f = [project(s, msk_i) for s in all_states]
 			# states_other = [s[msk_other] for s in all_states]
 			states_other = [project(s, msk_other) for s in all_states]
 
@@ -101,7 +110,7 @@ def generate_symbol_sets(option2transitions: dict[Action, list[Transition]], opt
 				e = [project(s, f_i) for s in e]
 				other_factors = [x for x in other_factors if x != f_i]
 
-	
+
 	pass
 
 
@@ -109,6 +118,8 @@ if __name__ == "__main__":
 	from sk2sy.domains.exit_room import ExitRoom
 	from sk2sy.utils.generate_transitions import generate_transitions
 	from sk2sy.algorithms.partition_options import deterministic_partition_options
+	from sk2sy.algorithms.compute_factors import compute_factors_from_transitions
+	from sk2sy.utils.partition_by_function import partition_by_function
 
 	domain = ExitRoom()
 	num_transitions = 10
@@ -117,5 +128,9 @@ if __name__ == "__main__":
 	transitions = generate_transitions(domain, num_transitions = num_transitions)
 
 	#Get partioned transitions
-	partitioned_options = deterministic_partition_options(transitions)
-	print(partitioned_options)
+	subgoal_option_transitions = deterministic_partition_options(transitions)
+	print(subgoal_option_transitions)
+	
+
+	factors, option2factors = compute_factors_from_transitions(subgoal_option_transitions)
+	generate_symbol_sets(subgoal_option_transitions, option2factors)

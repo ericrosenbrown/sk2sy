@@ -5,7 +5,7 @@ import numpy as np
 
 
 StateVar = NewType("StateVar", int)
-Factor = NewType("Factor", np.ndarray)
+# Factor = NewType("Factor", np.ndarray)
 State = NewType("State", tuple[float,...])
 States = NewType("States", np.ndarray)
 Action = NewType("Action", str)
@@ -17,3 +17,10 @@ class Transition:
     action: Action
     reward: Reward
     end_state: State
+
+
+
+@dataclass(frozen=True)
+class Factor:
+    nm: str
+    state_vars: tuple[StateVar,...]

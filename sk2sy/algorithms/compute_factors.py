@@ -19,7 +19,7 @@ from sk2sy.classes import Transition, StateVar, State, Action, Factor
 
 def compute_factors_from_transitions(transitions: list[Transition]
 	) -> tuple[
-		dict[int, list[Factor]],
+		list[Factor],
 		dict[int, list[Action]]
 	]:
 	'''
@@ -58,11 +58,30 @@ def compute_factors_from_transitions(transitions: list[Transition]
 
 	# MFNOTE: in the pseudocode, we have a list of factors for each option.
 	# Here we have a single 
-	options2statevars: dict[frozenset[Action], list[StateVar]] = partition_by_function(statevar2options.keys(), lambda s: frozenset(statevar2options[s]))
-	factor2statevars = {i:vs for i, vs in enumerate(options2statevars.values())}
-	factor2options = {i:x for i, x in enumerate(options2statevars.keys())}
 
-	return factor2statevars, factor2options
+	options2mask: dict[frozenset[Action], list[StateVar]] = partition_by_function(statevar2options.keys(), lambda s: frozenset(statevar2options[s]))
+	factors: list[Factor] = []
+	factor2options: dict[Factor, frozenset[Action]] = dict()
+	for i, (options, state_vars) in enumerate(options2mask.items()):
+		f = Factor(str(i), tuple(state_vars))
+		factors.append(f)
+		factor2options[f] = options
+
+
+	# factors: list[Factor] = [Factor(str(i), tuple(vs)) for i, vs in enumerate(options2statevars.values())]
+	# # factor2statevars = {i:vs for i, vs in enumerate(options2statevars.values())}
+	# factor2options = {i:x for i, x in enumerate(options2statevars.keys())}
+
+	# TODO build option2factors in the above loop and skip factor2options
+	option2factors: dict[Action, list[Factor]] = dict()
+	for factor, options in factor2options.items():
+		for o in options:
+			if o not in option2factors.keys():
+				option2factors[o] = [factor]
+			else:
+				option2factors[o].append(factor)
+
+	return factors, option2factors
 
 
 def compute_factors_domain(domain: Domain, num_transitions:float = 100
