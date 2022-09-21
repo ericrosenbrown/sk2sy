@@ -10,7 +10,7 @@ from sk2sy.transitions import Transition
 #TODO make a more interesting domain and test this code base
 #TODO maybe have a better data structure for what's returned from *_partition_options
 #TODO partitioned option names have ^ to designate them, make sure actions don't have that and maybe do something smarter later on?
-#TODO finished probablistic_partition_options
+#TODO finished probablistic_partition_options, have it call deterministic partition options
 
 
 def deterministic_partition_options(transitions: list[Transition], eps:float = 1e-2, min_samples:float = 5) -> list:
