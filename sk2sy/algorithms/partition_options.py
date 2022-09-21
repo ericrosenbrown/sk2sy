@@ -13,7 +13,7 @@ from sk2sy.transitions import Transition
 #TODO finished probablistic_partition_options, have it call deterministic partition options
 
 
-def deterministic_partition_options(transitions: list[Transition], eps:float = 1e-2, min_samples:float = 5) -> list:
+def deterministic_partition_options(transitions: list[Transition], eps:float = 1e-2, min_samples:float = 5) -> dict:
 	'''Given a list of transitions, return a new list of transitions with options partitioned
 	into approximately strong subgoal options (Im(o,x) = Eff(o) for all x in I_o). This assumes 
 	non-probablistic effect distriubtion. Uses DBSCAN for clustering from sklearn implementation
@@ -36,11 +36,14 @@ def deterministic_partition_options(transitions: list[Transition], eps:float = 1
 	partitioned action names are given by action_masknumber_partition. action is the name of the action
 	this partitioned action comes from, masknumber is a unique number representing a particular mask this
 	partitioned option has, and partition represents a particular clustering id.
+
+	See page 255 (41 in the pdf)
 	'''
 
 	partitioned_options = defaultdict(lambda :[]) 
 
 	#Get all the actions in the transitions
+	# MFNOTE: Is this faster than list(set([t.action for t in transitions])) ?
 	actions = list(set(map(lambda transition: transition.action, transitions)))
 
 	#For each action
@@ -73,6 +76,7 @@ def deterministic_partition_options(transitions: list[Transition], eps:float = 1
 			clustering = DBSCAN(eps=eps, min_samples=min_samples).fit(effect_states_np)
 			#print(clustering.labels_)
 			for (transition, cluster) in zip(transition_list, clustering.labels_):
+				# MFNOTE: I think named tuples (or dataclasses) are clearer than concatenated strings
 				partitioned_options[action+"^"+str(mask_idx)+"^"+str(cluster)].append(transition)
 	return(partitioned_options)
 
