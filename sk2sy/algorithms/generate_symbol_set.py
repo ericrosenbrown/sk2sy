@@ -1,11 +1,12 @@
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 import numpy as np
 import copy
 from functools import reduce
 from typing import NewType, Union
 
-from sk2sy.classes import Transition, State, Factor, Action, StateVar
+from sk2sy.classes import Transition, State, Factor, Action, StateVar, Symbol
 
 
 def concat_lists(*lsts):
@@ -20,7 +21,7 @@ def project(s: State, s_vars: tuple[StateVar,...]) -> State:
 	return State(tuple(s_array[idx_keep]))
 
 #TODO fill in the docstring for generate_symbol_sets fully
-def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Action, list[Factor]]):
+def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Action, list[Factor]], verbose: int=0):
 	'''
 	Generate the symbolic vocabulary
 	Psuedocode on page 237 (23)
@@ -62,7 +63,7 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 		# MFNOTE: Getting these labels could be done much faster, I think
 		state_is_e = np.array([s in e for s in all_states])
 		f = option2factors[o]
-		other_factors = [x for x in f if x != f]
+		other_factors: list[Factor] = [x for x in f if x != f]
 
 		for f_i in f:
 			# TODO use reduce
@@ -77,12 +78,11 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 
 
 			# Split states into training and holdout sets
-			rng = np.random.default_rng()
+			# Stratify by whether the state is in e
+			# rng = np.random.default_rng()
 			# Hyperparam: p_train
 			p_train = .8
-			n_train = int(np.ceil(n_states * p_train))
-			idx_train = rng.choice(n_states, size=n_train, replace=False)
-			idx_valid = np.setdiff1d(list(range(n_states)), idx_train)
+			idx_train, idx_valid = train_test_split(list(range(n_states)), train_size=p_train, stratify=state_is_e)
 
 
 			# Train classifiers on each projection
@@ -93,12 +93,13 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 			tree_other = DecisionTreeClassifier().fit(states_other[idx_train], state_is_e[idx_train])
 
 			# Check whether the product of classifiers is a good classifier
+			# TODO BUG if we 
 			y_pred_prob_f = tree_f.predict_proba(states_f[idx_valid])[:,1]
 			y_pred_prob_other = tree_other.predict_proba(states_other[idx_valid])[:,1]
 			# Hyperparam: method of combining classifiers
 			y_pred_combined_prob = y_pred_prob_f * y_pred_prob_other
 			pred_thresh = .5
-			print(y_pred_combined_prob)
+			if verbose > 1: print(y_pred_combined_prob)
 			y_pred_combined = [0 if y < pred_thresh else 1 for y in y_pred_combined_prob]
 
 			# Hyperparam: Metric and threshold for whether the combined classifier
@@ -106,11 +107,12 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 			score = accuracy_score(state_is_e[idx_valid], y_pred_combined)
 			score_thresh = .9
 			if score > score_thresh:
+				# Remove this factor from our factor list
+				other_factors = [x for x in other_factors if x != f_i]
 				# Add the symbol
-				symbols.append(tree_other)
+				symbols.append(Symbol(tree_other, tuple(other_factors)))
 				# Filter e TODO
 				e = [project(s, f_i.state_vars) for s in e]
-				other_factors = [x for x in other_factors if x != f_i]
 
 		# TODO Project out all combinations of remaining factors.
 	return symbols
@@ -123,7 +125,7 @@ if __name__ == "__main__":
 	from sk2sy.utils.partition_by_function import partition_by_function
 
 	domain = ExitRoom()
-	num_transitions = 1000
+	num_transitions = 100
 
 	#Generate transitions from domain
 	transitions = generate_transitions(domain, num_transitions = num_transitions)

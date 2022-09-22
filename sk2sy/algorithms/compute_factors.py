@@ -1,5 +1,6 @@
 from collections import defaultdict
 import functools
+from typing import Optional
 
 from sk2sy.utils.get_mask import get_mask
 from sk2sy.utils.generate_transitions import generate_transitions
@@ -17,7 +18,8 @@ from sk2sy.classes import Transition, StateVar, State, Action, Factor
 #TODO: (Compute factors by partioning state variables based on option_mask_dict) in functions may be bugged and needs to be checked/fixed?
 #TODO: update the docstrings correctly for these functions
 
-def compute_factors_from_transitions(transitions: list[Transition]
+def compute_factors_from_transitions(transitions: list[Transition],
+	state_var2name: Optional[list[str]] = None
 	) -> tuple[
 		list[Factor],
 		dict[int, list[Action]]
@@ -26,16 +28,6 @@ def compute_factors_from_transitions(transitions: list[Transition]
 	Compute the factors (parition over state variables based on similar option masks) for a given set of subgoal options.
 	This function is used when the domain originally does not have subgoal options, and so one of the partition_options
 	functions was used.
-
-	Parameters:
-	@transitions: a dictionary, where keys are actions, values are a list of transitions (state,action,reward,next_state)
-	that fall into the option partition.
-
-	Returns:
-	@factors_state_idxs: a dictionary, where key is factor_id, and value is state_idxs where state_idxs
-	is a list of state_idxs associated with factor_id 
-	@factors_options: a dictionary, where key is factor_id, and value is list of options that have mask over
-	state_variables included in factors_state_idxs[factor_id]
 	'''
 
 	# Mapping from state_var to list of options affecting it
@@ -63,7 +55,12 @@ def compute_factors_from_transitions(transitions: list[Transition]
 	factors: list[Factor] = []
 	factor2options: dict[Factor, frozenset[Action]] = dict()
 	for i, (options, state_vars) in enumerate(options2mask.items()):
-		f = Factor(str(i), tuple(state_vars))
+		if state_var2name is not None:
+			state_var_names = tuple([state_var2name[sv] for sv in state_vars])
+			f = Factor(str(i), tuple(state_vars), state_var_names=state_var_names)
+		else:
+			f = Factor(str(i), tuple(state_vars))
+
 		factors.append(f)
 		factor2options[f] = options
 
@@ -84,7 +81,7 @@ def compute_factors_from_transitions(transitions: list[Transition]
 	return factors, option2factors
 
 
-def compute_factors_domain(domain: Domain, num_transitions:float = 100
+def compute_factors_domain(domain: Domain, num_transitions:float = 100, state_var2name: Optional[list[str]] = None
 	) -> tuple[
 		dict[int, list[Factor]],
 		dict[int, list[Action]]
@@ -106,22 +103,25 @@ def compute_factors_domain(domain: Domain, num_transitions:float = 100
 	'''
 
 	transitions = generate_transitions(domain, num_transitions=num_transitions)
-	return(compute_factors_from_transitions(transitions))
+	return(compute_factors_from_transitions(transitions, state_var2name=state_var2name))
 
 
 
-if __name__ == "__main__":
-	#how many transitions we sample from domain (For estimating masks, subgoal partitioning
-	num_transitions = 100
-
+def test_compute_factors_domain(num_transitions: int = 100):
 	#Tests the compute_factors_domain function 
 	from sk2sy.domains.exit_room import ExitRoom
 	domain = ExitRoom()
-	factors_state_idxs, factors_options = compute_factors_domain(domain, num_transitions)
-	print("factor state idxs {f}".format(f=factors_state_idxs))
-	print("factor options {f}".format(f=factors_options))
+	factors, option2factors = compute_factors_domain(domain, num_transitions, state_var2name=domain.state_var_names)
+	print(f"{len(factors)} factors:")
+	for f in factors:
+		print(f)
 
+	# print("factor state idxs {f}".format(f=factors_state_idxs))
+	# print("factor options {f}".format(f=factors_options))
+
+def test_compute_factors_from_transitions(num_transitions: int = 100):
 	#Tests the compute_factors_from_subgoal_option_transitions function
+	from sk2sy.domains.exit_room import ExitRoom
 	from sk2sy.algorithms.partition_options import deterministic_partition_options
 	domain = ExitRoom()
 	#Generate transitions from domain
@@ -129,8 +129,13 @@ if __name__ == "__main__":
 	#Get partioned options
 	partitioned_options = deterministic_partition_options(transitions)
 	#Compute factors
-	factors_state_idxs, factors_options = compute_factors_from_transitions(partitioned_options)
-	print("factor state idxs {f}".format(f=factors_state_idxs))
-	print("factor options {f}".format(f=factors_options))
+	factors_state_idxs, factors_options = compute_factors_from_transitions(partitioned_options, state_var2name=domain.state_var_names)
+	# print("factor state idxs {f}".format(f=factors_state_idxs))
+	# print("factor options {f}".format(f=factors_options))
 
 
+
+if __name__ == "__main__":
+	#how many transitions we sample from domain (For estimating masks, subgoal partitioning
+	num_transitions: int = 1000
+	test_compute_factors_domain(num_transitions)

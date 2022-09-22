@@ -6,11 +6,13 @@ import numpy as np
 from sk2sy.domains.domain import Domain
 from sk2sy.classes import Action, State, Reward
 
-#TODO standardize domains under single domain class, type requirements on states, actions, etc.?
 #TODO connect with gym setup
 #TODO unit tests
 
 class ExitRoom(Domain):
+	# TODO state vector and names vector could be generated in the same place
+	# to avoid bugs when we update one but not the other
+	state_var_names: list[str] = ["door_loc0", "door_loc1", "switch0_loc0","switch0_loc1", "switch1_loc0", "switch1_loc1", "robot_loc0", "robot_loc1", "door_status", "switch0_status", "switch1_status"]
 	def __init__(self):
 		'''
 		The ExitRoom domain. There is a door the robot must be opened. In order to unlock the door,
@@ -55,6 +57,7 @@ class ExitRoom(Domain):
 		# Make it a tuple so we it is hashable
 		return(State(tuple(state)))
 
+	
 
 	def reset(self) -> State:
 		'''
