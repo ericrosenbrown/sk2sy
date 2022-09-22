@@ -112,9 +112,14 @@ def test_compute_factors_domain(num_transitions: int = 100):
 	from sk2sy.domains.exit_room import ExitRoom
 	domain = ExitRoom()
 	factors, option2factors = compute_factors_domain(domain, num_transitions, state_var2name=domain.state_var_names)
+	factor2options = invert_dict(option2factors)
+	print("~" * 100)
 	print(f"{len(factors)} factors:")
-	for f in factors:
-		print(f)
+	for f, options in factor2options.items():
+		print(f"Factor: {f}\nOptions: {options}")
+		print("")
+	# for f in factors:
+	# 	print(f)
 
 	# print("factor state idxs {f}".format(f=factors_state_idxs))
 	# print("factor options {f}".format(f=factors_options))
