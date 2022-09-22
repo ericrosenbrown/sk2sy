@@ -93,27 +93,26 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 			tree_other = DecisionTreeClassifier().fit(states_other[idx_train], state_is_e[idx_train])
 
 			# Check whether the product of classifiers is a good classifier
-			y_pred_f = tree_f.predict_proba(states_f[idx_valid])
-			y_pred_other = tree_other.predict_proba(states_other[idx_valid])
+			y_pred_prob_f = tree_f.predict_proba(states_f[idx_valid])[:,1]
+			y_pred_prob_other = tree_other.predict_proba(states_other[idx_valid])[:,1]
 			# Hyperparam: method of combining classifiers
-			y_pred_prod_prob = y_pred_f * y_pred_other
+			y_pred_combined_prob = y_pred_prob_f * y_pred_prob_other
 			pred_thresh = .5
-			print(y_pred_prod_prob)
-			y_pred_prod = [0 if y < pred_thresh else 1 for y in y_pred_prod_prob]
+			print(y_pred_combined_prob)
+			y_pred_combined = [0 if y < pred_thresh else 1 for y in y_pred_combined_prob]
 
 			# Hyperparam: Metric and threshold for whether the combined classifier
 			# is good enough for this to be a valid symbol
-			score = accuracy_score(state_is_e, y_pred_prod)
+			score = accuracy_score(state_is_e[idx_valid], y_pred_combined)
 			score_thresh = .9
 			if score > score_thresh:
 				# Add the symbol
 				symbols.append(tree_other)
 				# Filter e TODO
-				e = [project(s, f_i) for s in e]
+				e = [project(s, f_i.state_vars) for s in e]
 				other_factors = [x for x in other_factors if x != f_i]
 
-
-	pass
+		# TODO Project out all combinations of remaining factors.
 
 
 if __name__ == "__main__":
