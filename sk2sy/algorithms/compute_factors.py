@@ -22,7 +22,7 @@ def compute_factors_from_transitions(transitions: list[Transition],
 	state_var2name: Optional[list[str]] = None
 	) -> tuple[
 		list[Factor],
-		dict[int, list[Action]]
+		dict[Action, list[Factor]]
 	]:
 	'''
 	Compute the factors (parition over state variables based on similar option masks) for a given set of subgoal options.

@@ -21,7 +21,7 @@ def project(s: State, s_vars: tuple[StateVar,...]) -> State:
 	return State(tuple(s_array[idx_keep]))
 
 #TODO fill in the docstring for generate_symbol_sets fully
-def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Action, list[Factor]], verbose: int=0):
+def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Action, list[Factor]], verbose: int=0) -> list[Symbol]:
 	'''
 	Generate the symbolic vocabulary
 	Psuedocode on page 237 (23)
@@ -64,11 +64,13 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 		state_is_e = np.array([s in e for s in all_states])
 		f = option2factors[o]
 		other_factors: list[Factor] = [x for x in f if x != f]
-
+		if "move" in o:
+			1 == 1
 		for f_i in f:
 			# TODO use reduce
 			msk_i = f_i.state_vars
-			msk_other = sorted(list(set(concat_lists(*[f_j.state_vars for f_j in f if f_j != f_i]))))
+			other_factors_inner: list[Factor] = [f_j for f_j in other_factors if f_j != f_i]
+			msk_other = sorted(list(set(concat_lists(*other_factors_inner))))
 
 			# Project e onto f and f_complement
 			# states_f = [s[f] for s in all_states]
@@ -91,6 +93,8 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 			# Hyperparam: architecture, and hyperparams of the architecture
 			tree_f = DecisionTreeClassifier().fit(states_f[idx_train], state_is_e[idx_train])
 			tree_other = DecisionTreeClassifier().fit(states_other[idx_train], state_is_e[idx_train])
+			symbol_f = Symbol(tree_other, o, (f_i,))
+			symbol_other = Symbol(tree_f, o, tuple(other_factors_inner))
 
 			# Check whether the product of classifiers is a good classifier
 			# TODO BUG if we 
@@ -101,21 +105,38 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 			pred_thresh = .5
 			if verbose > 1: print(y_pred_combined_prob)
 			y_pred_combined = [0 if y < pred_thresh else 1 for y in y_pred_combined_prob]
+			# These preds/scores are used for debugging only
+			y_pred_f = [0 if y < pred_thresh else 1 for y in y_pred_prob_f]
+			y_pred_other = [0 if y < pred_thresh else 1 for y in y_pred_prob_other]
 
 			# Hyperparam: Metric and threshold for whether the combined classifier
 			# is good enough for this to be a valid symbol
 			score = accuracy_score(state_is_e[idx_valid], y_pred_combined)
+			score_f = accuracy_score(state_is_e[idx_valid], y_pred_f)
+			score_other = accuracy_score(state_is_e[idx_valid], y_pred_other)
+			scores_d = {"f":score_f, "other":score_other, "comb": score}
+
+
 			score_thresh = .9
 			if score > score_thresh:
 				# Remove this factor from our factor list
-				other_factors = [x for x in other_factors if x != f_i]
+				other_factors = other_factors_inner
+
 				# Add the symbol
-				symbols.append(Symbol(tree_other, tuple(other_factors)))
-				# Filter e TODO
+				# NOTE: The factors are the ones whose state_vars we care about for this symbol
+				# NOT the factors we project away.
+				symbols.append(symbol_f)
+				# Filter e
 				e = [project(s, f_i.state_vars) for s in e]
 
 		# TODO Project out all combinations of remaining factors.
 	return symbols
+
+def pretty_print_option2factors(d: dict[Action, list[Factor]]):
+	for o, fs in d.items():
+		print(o)
+		print(fs)
+		print("")
 
 if __name__ == "__main__":
 	from sk2sy.domains.exit_room import ExitRoom
@@ -125,16 +146,23 @@ if __name__ == "__main__":
 	from sk2sy.utils.partition_by_function import partition_by_function
 
 	domain = ExitRoom()
-	num_transitions = 100
+	num_transitions = 1000
 
 	#Generate transitions from domain
 	transitions = generate_transitions(domain, num_transitions = num_transitions)
 
 	#Get partioned transitions
 	subgoal_option_transitions = deterministic_partition_options(transitions)
-	print(subgoal_option_transitions)
-	
+	# print(subgoal_option_transitions)
 
-	factors, option2factors = compute_factors_from_transitions(subgoal_option_transitions)
+	factors, option2factors = compute_factors_from_transitions(subgoal_option_transitions, state_var2name=domain.state_var_names)
+	
+	pretty_print_option2factors(option2factors)
+
 	symbols = generate_symbol_sets(subgoal_option_transitions, option2factors)
-	print(len(symbols))
+	print(f"# Symbols: {len(symbols)}")
+	for s in symbols:
+		print(s.option)
+		print(s.state_var_names)
+		# print(s.state_vars)
+		print("")

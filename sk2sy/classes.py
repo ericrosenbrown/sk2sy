@@ -53,6 +53,7 @@ class Factor:
 @dataclass(frozen=True)
 class Symbol:
     predictor: Classifier
+    option: Action
     factors: tuple[Factor,...]
 
     @property
