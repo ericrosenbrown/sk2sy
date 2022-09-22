@@ -113,7 +113,7 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 				other_factors = [x for x in other_factors if x != f_i]
 
 		# TODO Project out all combinations of remaining factors.
-
+	return symbols
 
 if __name__ == "__main__":
 	from sk2sy.domains.exit_room import ExitRoom
@@ -123,7 +123,7 @@ if __name__ == "__main__":
 	from sk2sy.utils.partition_by_function import partition_by_function
 
 	domain = ExitRoom()
-	num_transitions = 10
+	num_transitions = 1000
 
 	#Generate transitions from domain
 	transitions = generate_transitions(domain, num_transitions = num_transitions)
@@ -134,4 +134,5 @@ if __name__ == "__main__":
 	
 
 	factors, option2factors = compute_factors_from_transitions(subgoal_option_transitions)
-	generate_symbol_sets(subgoal_option_transitions, option2factors)
+	symbols = generate_symbol_sets(subgoal_option_transitions, option2factors)
+	print(len(symbols))
