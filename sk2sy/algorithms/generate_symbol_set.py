@@ -60,7 +60,7 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 		# all_states = sorted(list(set(e + [tuple(t.start_state) for t in ts])))
 		n_states = len(all_states)
 		# MFNOTE: Getting these labels could be done much faster, I think
-		state_is_e = [s in e for s in all_states]
+		state_is_e = np.array([s in e for s in all_states])
 		f = option2factors[o]
 		other_factors = [x for x in f if x != f]
 
@@ -71,9 +71,9 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 
 			# Project e onto f and f_complement
 			# states_f = [s[f] for s in all_states]
-			states_f = [project(s, msk_i) for s in all_states]
+			states_f = np.array([np.array(project(s, msk_i)) for s in all_states])
 			# states_other = [s[msk_other] for s in all_states]
-			states_other = [project(s, msk_other) for s in all_states]
+			states_other = np.array([np.array(project(s, msk_other)) for s in all_states])
 
 
 			# Split states into training and holdout sets
@@ -83,6 +83,7 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 			n_train = int(np.ceil(n_states * p_train))
 			idx_train = rng.choice(n_states, size=n_train, replace=False)
 			idx_valid = np.setdiff1d(list(range(n_states)), idx_train)
+
 
 			# Train classifiers on each projection
 			# Hyperparam: Should we de-dedupe each of these sets, since the projection may
@@ -97,6 +98,7 @@ def generate_symbol_sets(transitions: list[Transition], option2factors: dict[Act
 			# Hyperparam: method of combining classifiers
 			y_pred_prod_prob = y_pred_f * y_pred_other
 			pred_thresh = .5
+			print(y_pred_prod_prob)
 			y_pred_prod = [0 if y < pred_thresh else 1 for y in y_pred_prod_prob]
 
 			# Hyperparam: Metric and threshold for whether the combined classifier
